@@ -1,0 +1,36 @@
+name: Trello issue sync
+
+on:
+  # schedule:
+  #   - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      card_short_link:
+        description: "Trello card shortLink (8 characters). Leave empty to sync all cards with the label."
+        required: false
+        type: string
+permissions:
+  contents: read
+
+concurrency:
+  group: trello-issue-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Copilot issues and link cards
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
+          TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+          TRELLO_LABEL: "AI ready"
+          CARD_SHORT_LINK: ${{ inputs.card_short_link }}
+          FRONTEND_LABEL: "Frontend"
+          BACKEND_LABEL: "Backend"
+          FRONTEND_REPO: "mel-aida-1st/bloom-frontend"
+          BACKEND_REPO: "mel-aida-1st/bloom-backend"
+        run: bash .github/scripts/sync-trello-issues.sh
