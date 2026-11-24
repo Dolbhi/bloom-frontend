@@ -4,6 +4,8 @@ import { Button, IconButton, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { plantApi } from '../../../../api/plantApi';
+import { BloomIndicator } from '../../../../components/BloomIndicator';
+import { BloomPollenWarning } from '../../../../components/BloomPollenWarning';
 import { colors } from '../../../../theme/colors';
 import type { Plant } from '../../../../types/plant';
 
@@ -26,20 +28,34 @@ export default function PlantDetailsScreen() {
   if (loading) return <SafeAreaView style={styles.center}><Text>Loading plant details…</Text></SafeAreaView>;
   if (!plant) return <SafeAreaView style={styles.center}><Text>Plant not found.</Text><Button onPress={() => router.back()}>Back to map</Button></SafeAreaView>;
 
+  const pollenStatus = plant.pollenLevel === 'Low' ? 'pollenLow'
+    : plant.pollenLevel === 'High' ? 'pollenHigh'
+    : undefined;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <Image source={plant.photo} style={styles.heroImage} resizeMode="cover" accessibilityLabel={`Photo of ${plant.name}`} />
           <IconButton icon="arrow-left" iconColor={colors.deepPlum} containerColor={colors.white} size={28} onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back to Discovery" />
-          <View style={styles.heroBadge}><Text style={styles.badgeText}>{plant.bloomStatus.toUpperCase()}</Text></View>
+          {plant.bloomStatus === 'Blooming now' ? (
+            <View style={styles.heroIndicator}>
+              <BloomIndicator status="bloom" />
+            </View>
+          ) : (
+            <View style={styles.heroBadge}><Text style={styles.badgeText}>{plant.bloomStatus.toUpperCase()}</Text></View>
+          )}
         </View>
         <View style={styles.main}>
           <Text style={styles.title}>{plant.name}</Text>
           <Text style={styles.scientificName}>{plant.scientificName}</Text>
           <View style={styles.pills}>
             <Text style={styles.statusPill}>Community sample sighting</Text>
-            <Text style={styles.pollenPill}>{plant.pollenLevel} POLLEN · Example</Text>
+            {pollenStatus ? (
+              <BloomIndicator status={pollenStatus} label={`${plant.pollenLevel} POLLEN · Example`} />
+            ) : (
+              <Text style={styles.pollenPill}>{plant.pollenLevel} POLLEN · Example</Text>
+            )}
           </View>
           <View style={styles.card}>
             <View style={styles.rowBetween}>
@@ -59,10 +75,10 @@ export default function PlantDetailsScreen() {
             </View>
             <Text style={styles.helper}>Example flowering window · Southern hemisphere</Text>
           </View>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{plant.pollenLevel} pollen — take care</Text>
-            <Text style={styles.bodyText}>This is illustrative pollen guidance, not a live reading or medical advice. Check local pollen conditions.</Text>
-          </View>
+          <BloomPollenWarning
+            title={`${plant.pollenLevel} pollen — take care`}
+            body="This is illustrative pollen guidance, not a live reading or medical advice. Check local pollen conditions."
+          />
           <Text style={styles.sectionTitle}>About this sighting</Text>
           <Text style={styles.bodyText}>{plant.description}</Text>
           <Text style={styles.sectionTitle}>Where to find it</Text>
@@ -91,6 +107,7 @@ const styles = StyleSheet.create({
   hero: { height: 245, backgroundColor: colors.paleGreen },
   heroImage: { width: '100%', height: '100%' },
   backButton: { position: 'absolute', top: 10, left: 12 },
+  heroIndicator: { position: 'absolute', bottom: 16, left: 16, right: 16 },
   heroBadge: { position: 'absolute', bottom: 16, left: 16, borderRadius: 16, backgroundColor: colors.white, paddingHorizontal: 13, paddingVertical: 8 },
   badgeText: { color: colors.leafGreen, fontFamily: 'NotoSans_700Bold', fontSize: 12 },
   main: { paddingHorizontal: 16, paddingTop: 22, gap: 12 },

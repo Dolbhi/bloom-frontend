@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Button, Checkbox, Chip, Dialog, Portal, Text, TextInput } from 'react-native-paper';
+import { Button, Checkbox, Dialog, Portal, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { plantApi } from '../../../api/plantApi';
+import { BloomFilterChip } from '../../../components/BloomFilterChip';
+import { BloomPollenWarning } from '../../../components/BloomPollenWarning';
+import { BloomSearchField } from '../../../components/BloomSearchField';
 import { PlantTile } from '../../../components/PlantTile';
 import { MapPreview } from '../../../components/MapPreview';
+import { Spacing } from '../../../constants/theme';
 import { colors } from '../../../theme/colors';
 import type { Plant, PlantCategory } from '../../../types/plant';
 
@@ -44,31 +48,40 @@ export default function DiscoveryScreen() {
 
         <Text style={styles.fieldLabel}>Search plants or places</Text>
         <View style={styles.searchRow}>
-          <TextInput
-            mode="outlined"
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Plant, park or street"
-            accessibilityLabel="Search plants or places"
-            left={<TextInput.Icon icon="magnify" />}
-            style={styles.searchInput}
-            contentStyle={{ fontSize: 17 }}
-            outlineStyle={{ borderRadius: 15 }}
-          />
+          <View style={styles.searchField}>
+            <BloomSearchField
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Plant, park or street"
+              accessibilityLabel="Search plants or places"
+            />
+          </View>
           <Button mode="contained" onPress={() => setFilterDialogVisible(true)} contentStyle={{ minHeight: 54 }} style={styles.filterButton}>Filters</Button>
         </View>
         <View style={styles.chipRow}>
           {categories.map((item) => (
-            <Chip key={item} selected={category === item} onPress={() => setCategory(item)} mode="outlined" style={styles.chip} textStyle={styles.chipText}>{item}</Chip>
+            <BloomFilterChip
+              key={item}
+              label={item}
+              selected={category === item}
+              selectedTreatment={item === 'All' ? 'solid' : 'tinted'}
+              onPress={() => setCategory(item)}
+            />
           ))}
-          <Chip selected={lowPollenOnly} onPress={() => setLowPollenOnly(!lowPollenOnly)} mode="outlined" style={styles.chip} textStyle={styles.chipText}>Low pollen</Chip>
+          <BloomFilterChip
+            label="Low pollen"
+            selected={lowPollenOnly}
+            onPress={() => setLowPollenOnly(!lowPollenOnly)}
+          />
         </View>
 
         {featured && <MapPreview featured={featured} onOpenPlant={() => openPlant(featured.id)} />}
         <Text style={styles.mapCaption}>Illustrative map and sample distances — not live GPS</Text>
-        <View style={styles.pollenCard}>
-          <Text style={styles.pollenHeading}>Hay fever today · Example: Moderate</Text>
-          <Text style={styles.pollenBody}>Sample tree pollen information. Check a local forecast before planning a visit.</Text>
+        <View style={styles.warningPlacement}>
+          <BloomPollenWarning
+            title="Hay fever today · Example: Moderate"
+            body="Sample tree pollen information. Check a local forecast before planning a visit."
+          />
         </View>
 
         <View style={styles.sectionHeader}>
@@ -88,7 +101,15 @@ export default function DiscoveryScreen() {
           <Dialog.Content>
             <Text style={styles.dialogLabel}>Plant category</Text>
             <View style={styles.chipRow}>
-              {categories.map((item) => <Chip key={item} mode="outlined" selected={category === item} onPress={() => setCategory(item)} style={styles.chip}>{item}</Chip>)}
+              {categories.map((item) => (
+                <BloomFilterChip
+                  key={item}
+                  label={item}
+                  selected={category === item}
+                  selectedTreatment={item === 'All' ? 'solid' : 'tinted'}
+                  onPress={() => setCategory(item)}
+                />
+              ))}
             </View>
             <Checkbox.Item label="Show only low pollen" status={lowPollenOnly ? 'checked' : 'unchecked'} onPress={() => setLowPollenOnly(!lowPollenOnly)} labelStyle={{ fontSize: 17, color: colors.deepPlum }} />
           </Dialog.Content>
@@ -107,16 +128,12 @@ const styles = StyleSheet.create({
   heading: { marginTop: 10, fontSize: 27, lineHeight: 37, color: colors.deepPlum, fontFamily: 'NotoSans_700Bold' },
   subheading: { color: colors.deepPlum, fontSize: 17, lineHeight: 26, marginTop: 3 },
   fieldLabel: { marginTop: 24, marginBottom: 7, fontSize: 16, color: colors.leafGreen, fontFamily: 'NotoSans_700Bold' },
-  searchRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  searchInput: { flex: 1, backgroundColor: colors.white, minWidth: 0 },
+  searchRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
+  searchField: { flex: 1, minWidth: 0 },
   filterButton: { borderRadius: 16 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 13 },
-  chip: { backgroundColor: colors.white, minHeight: 45, justifyContent: 'center', borderColor: colors.leafGreen },
-  chipText: { fontSize: 14, color: colors.deepPlum },
   mapCaption: { fontSize: 14, lineHeight: 21, marginTop: 8, color: colors.leafGreen },
-  pollenCard: { marginTop: 20, padding: 18, borderColor: colors.border, borderWidth: 1, backgroundColor: colors.white, borderRadius: 18, gap: 6 },
-  pollenHeading: { fontFamily: 'NotoSans_700Bold', fontSize: 16, color: colors.deepPlum },
-  pollenBody: { fontSize: 15, lineHeight: 23, color: colors.deepPlum },
+  warningPlacement: { marginTop: 20 },
   sectionHeader: { marginTop: 32, marginBottom: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   sectionTitle: { fontSize: 21, lineHeight: 28, fontFamily: 'NotoSans_700Bold', color: colors.deepPlum, flexShrink: 1 },
   sectionSide: { fontSize: 13, color: colors.leafGreen },
