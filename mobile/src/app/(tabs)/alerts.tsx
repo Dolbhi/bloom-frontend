@@ -1,52 +1,166 @@
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Card, Chip, Text } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
+import { Text } from 'react-native-paper';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { router } from 'expo-router';
+import { plantApi } from '../../api/plantApi';
+import { BloomButton } from '../../components/BloomButton';
+import { BloomFilterChip } from '../../components/BloomFilterChip';
+import { BloomLogo } from '../../components/BloomLogo';
 import { BloomScreen } from '../../components/BloomScreen';
+import { Radii, Spacing } from '../../constants/theme';
 import { colors } from '../../theme/colors';
+import { displayTypography } from '../../theme/typography';
+import type { Plant, PollenLevel } from '../../types/plant';
 
-type Category = 'All' | 'Blooms' | 'Pollen';
+const categories = ['All', 'Blooms', 'Pollen'] as const;
+type Category = (typeof categories)[number];
+
 const demoAlerts = [
-  { id: 'a', kind: 'Blooms' as Category, title: 'Cherry bloom activity nearby', detail: 'Sample update: Cherry Blossom flowering in Carlton Gardens.', icon: 'flower-outline' as const, tone: colors.palePurple },
-  { id: 'b', kind: 'Pollen' as Category, title: 'A breezy day ahead', detail: 'Example pollen reminder only. Check a current trusted forecast.', icon: 'weather-windy' as const, tone: colors.pollenBackground },
-  { id: 'c', kind: 'Blooms' as Category, title: 'Watch the spring blooms', detail: 'Sample update: Lilac and Dogwood are in the seasonal gallery.', icon: 'leaf' as const, tone: colors.paleGreen },
+  {
+    id: 'a', kind: 'Blooms', title: 'Cherry bloom activity nearby',
+    detail: 'Sample update: Cherry Blossom flowering in Carlton Gardens.',
+    plantIds: ['cherry-blossom'],
+  },
+  {
+    id: 'b', kind: 'Pollen', title: 'A breezy day ahead',
+    detail: 'Example pollen reminder only. Check a current trusted forecast.',
+    plantIds: [],
+  },
+  {
+    id: 'c', kind: 'Blooms', title: 'Watch the spring blooms',
+    detail: 'Sample update: Lilac and Dogwood are in the seasonal gallery.',
+    plantIds: ['common-lilac', 'pacific-dogwood'],
+  },
 ];
+
+const pollenColors: Record<PollenLevel, { color: string; backgroundColor: string }> = {
+  Low: { color: colors.leafGreen, backgroundColor: colors.paleGreen },
+  Moderate: { color: colors.deepPlum, backgroundColor: colors.palePurple },
+  High: { color: colors.pollenText, backgroundColor: colors.pollenBackground },
+};
+
+function PollenBadge({ level, label }: { level: PollenLevel; label: string }) {
+  return <Text style={[styles.badge, pollenColors[level]]}>{label}</Text>;
+}
+
+function PlantReference({ plant }: { plant: Plant }) {
+  return (
+    <View style={styles.plantReference}>
+      <View style={styles.plantInfo}>
+        <Image source={plant.photo} resizeMode="cover" style={styles.photo} accessible={false} aria-hidden />
+        <View style={styles.plantText}>
+          <Text style={styles.cardTitle}>{plant.name}</Text>
+          <PollenBadge level={plant.pollenLevel} label={`${plant.pollenLevel} pollen · Plant sample`} />
+        </View>
+      </View>
+      <BloomButton
+        label="Plant details"
+        accessibilityLabel={`View ${plant.name} details`}
+        variant="secondary"
+        width="100%"
+        onPress={() => router.push({ pathname: '/plants/[id]', params: { id: plant.id } })}
+      />
+    </View>
+  );
+}
+
 export default function AlertsScreen() {
   const [filter, setFilter] = useState<Category>('All');
-  const shown = demoAlerts.filter((a) => filter === 'All' || a.kind === filter);
+  const [plants, setPlants] = useState<Plant[]>([]);
+  useEffect(() => { plantApi.listPlants().then(setPlants); }, []);
+  const shown = demoAlerts.filter((alert) => filter === 'All' || alert.kind === filter);
+
   return (
-    <BloomScreen title="Alerts" subtitle="Bloom activity and seasonal updates at a glance." eyebrow="DISCOVER WHAT'S CHANGING">
-      <Card mode="contained" style={styles.summary}><Card.Content style={styles.summaryContent}>
-        <MaterialCommunityIcons name="weather-partly-cloudy" size={32} color={colors.leafGreen} />
-        <View style={{ flex: 1 }}><Text style={styles.summaryTitle}>Your botanical outlook</Text><Text style={styles.text}>Illustrative Melbourne updates — not live weather, pollen or medical advice.</Text></View>
-      </Card.Content></Card>
-      <Text style={styles.section}>Notifications</Text>
-      <View style={styles.filters}>
-        {(['All', 'Blooms', 'Pollen'] as Category[]).map((value) => <Chip key={value} selected={filter === value} onPress={() => setFilter(value)} style={styles.chip} textStyle={styles.chipText}>{value}</Chip>)}
+    <BloomScreen
+      botanical
+      contentContainerStyle={styles.content}
+      header={
+        <View style={styles.header}>
+          <BloomLogo />
+          <Text style={styles.eyebrow}>MELBOURNE · SAMPLE UPDATES</Text>
+          <Text accessibilityRole="header" style={displayTypography.screenHeading}>Alerts</Text>
+          <Text style={styles.body}>Explore sample bloom updates and pollen information for Melbourne.</Text>
+        </View>
+      }
+    >
+      <View style={styles.sections}>
+        <View style={styles.card}>
+          <View style={styles.outlookTop}>
+            <Text style={styles.eyebrow}>EXAMPLE POLLEN OUTLOOK</Text>
+            <PollenBadge level="Moderate" label="Moderate · Example" />
+          </View>
+          <Text accessibilityRole="header" style={displayTypography.sectionHeading}>Spring tree pollen</Text>
+          <Text style={styles.body}>Illustrative spring outlook. Check a trusted local forecast for current pollen conditions.</Text>
+          <Text style={styles.helper}>Live pollen readings and forecasts are unavailable in Bloom.</Text>
+        </View>
+
+        <View style={styles.alerts}>
+          <Text accessibilityRole="header" style={displayTypography.sectionHeading}>Sample alerts</Text>
+          <View style={styles.filters}>
+            {categories.map((value) => (
+              <BloomFilterChip
+                key={value}
+                label={filter === value ? `✓ ${value}` : value}
+                accessibilityLabel={value === 'All' ? 'All sample alerts' : `${value} sample alerts`}
+                selected={filter === value}
+                selectedTreatment="solid"
+                onPress={() => setFilter(value)}
+              />
+            ))}
+          </View>
+          {shown.map((alert) => (
+            <View key={alert.id} style={[styles.card, alert.id === 'c' && styles.seasonCard]}>
+              <View style={styles.alertHeading}>
+                <MaterialCommunityIcons
+                  name={alert.kind === 'Pollen' ? 'weather-windy' : 'flower-outline'}
+                  size={22}
+                  color={alert.id === 'c' ? colors.white : colors.leafGreen}
+                  aria-hidden
+                />
+                <Text style={[styles.eyebrow, alert.id === 'c' && styles.inverse]}>
+                  {alert.id === 'c' ? 'SEASON NOTE' : `${alert.kind} · Sample notice`}
+                </Text>
+              </View>
+              <Text accessibilityRole="header" style={alert.id === 'c'
+                ? [displayTypography.sectionHeading, styles.inverse]
+                : styles.cardTitle}>
+                {alert.title}
+              </Text>
+              <Text style={[styles.body, alert.id === 'c' && styles.inverse]}>{alert.detail}</Text>
+              {alert.plantIds.map((id) => {
+                const plant = plants.find((candidate) => candidate.id === id);
+                return plant && <PlantReference key={id} plant={plant} />;
+              })}
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.notice}>These notices are examples. Automatic notifications and notification preferences are unavailable in this version.</Text>
       </View>
-      {shown.map((item) => <Card key={item.id} mode="outlined" style={styles.card}>
-        <Card.Content style={styles.alertRow}>
-          <View style={[styles.iconCircle, { backgroundColor: item.tone }]}><MaterialCommunityIcons name={item.icon} size={27} color={colors.purple} /></View>
-          <View style={{ flex: 1 }}><Text style={styles.cardTitle}>{item.title}</Text><Text style={styles.text}>{item.detail}</Text><Text style={styles.category}>{item.kind} · Sample notice</Text></View>
-        </Card.Content>
-      </Card>)}
-      <Text style={styles.disclaimer}>Automatic notifications will require backend support and user preferences later.</Text>
     </BloomScreen>
   );
 }
+
 const styles = StyleSheet.create({
-  summary: { borderRadius: 23, backgroundColor: colors.paleGreen },
-  summaryContent: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  summaryTitle: { color: colors.deepPlum, fontFamily: 'NotoSans_700Bold', fontSize: 18 },
-  section: { color: colors.deepPlum, fontFamily: 'NotoSans_700Bold', fontSize: 21 },
-  text: { color: colors.deepPlum, fontSize: 16, lineHeight: 24, marginTop: 4 },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { backgroundColor: colors.white, minHeight: 48, justifyContent: 'center' },
-  chipText: { color: colors.deepPlum, fontSize: 16 },
-  card: { backgroundColor: colors.white, borderColor: colors.border, borderRadius: 22 },
-  alertRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  iconCircle: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { color: colors.deepPlum, fontFamily: 'NotoSans_700Bold', fontSize: 17, lineHeight: 25 },
-  category: { color: colors.leafGreen, fontSize: 13, marginTop: 9 },
-  disclaimer: { color: colors.leafGreen, fontSize: 14, lineHeight: 22 },
+  content: { paddingTop: Spacing.three, paddingBottom: Spacing.five },
+  header: { gap: Spacing.twelve },
+  eyebrow: { color: colors.leafGreen, fontFamily: 'NotoSans_700Bold', fontSize: 13, letterSpacing: 0.5, flexShrink: 1 },
+  sections: { gap: Spacing.four, marginTop: Spacing.four },
+  alerts: { gap: Spacing.twelve },
+  card: { backgroundColor: colors.white, borderColor: colors.border, borderWidth: 1, borderRadius: Radii[24], padding: Spacing.three, gap: Spacing.twelve },
+  outlookTop: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
+  badge: { alignSelf: 'flex-start', maxWidth: '100%', overflow: 'hidden', borderRadius: Radii[24], paddingHorizontal: Spacing.twelve, paddingVertical: Spacing.two, fontFamily: 'NotoSans_700Bold', fontSize: 13, lineHeight: 19 },
+  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  alertHeading: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  cardTitle: { color: colors.deepPlum, fontFamily: 'NotoSans_700Bold', fontSize: 17, lineHeight: 24 },
+  body: { color: colors.deepPlum, fontSize: 16, lineHeight: 24 },
+  helper: { color: colors.leafGreen, fontSize: 14, lineHeight: 22 },
+  seasonCard: { backgroundColor: colors.leafGreen, borderColor: colors.leafGreen },
+  inverse: { color: colors.white },
+  plantReference: { backgroundColor: colors.white, borderColor: colors.border, borderWidth: 1, borderRadius: Radii[16], padding: Spacing.twelve, gap: Spacing.twelve },
+  plantInfo: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.twelve },
+  plantText: { flex: 1, minWidth: 0, gap: Spacing.one },
+  photo: { width: 48, height: 48, borderRadius: Radii[12] },
+  notice: { color: colors.deepPlum, backgroundColor: colors.pollenBackground, borderRadius: Radii[16], padding: Spacing.three, fontSize: 14, lineHeight: 22 },
 });
