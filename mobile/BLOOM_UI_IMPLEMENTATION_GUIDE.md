@@ -1,78 +1,60 @@
-# Bloom mobile UI demo — setup and test guide
+# Bloom UI implementation guide
 
-This is **a source-code overlay** for the Expo project in your existing `bloom-frontend/mobile` folder. It is **not** a second Expo project. The package reproduces the approved Bloom flow in React Native/React Native Paper with the final flower palette, five bottom tabs, and eight layout views (Discovery, Plant Details, Seasons, Submit, Alerts, Profile, Account, Community Review). It does not include the production backend.
+The Expo app in this repository implements Discovery, Plant Details, Seasons, Plant Submission, Alerts, Profile, Account, and Community Review. See the [mobile README](README.md) for setup and validation commands.
 
-> This is a best-effort mockup interpretation, not a pixel-perfect export of the UI kit. Please compare every screen against your team's approved reference images tomorrow before accepting the appearance.
+## Source architecture
 
-## Before copying
+| Path | Responsibility |
+| --- | --- |
+| [src/app](src/app) | Expo Router screens and layouts. Five bottom tabs contain the main flow. Plant Details is nested under Discovery, while Account and Community Review use the root stack. |
+| [src/components](src/components) | Reusable Bloom presentation and controls. |
+| [src/hooks](src/hooks) | Shared plant-list request lifecycle. |
+| [src/utils](src/utils) | Shared calendar metadata. |
+| [src/api](src/api) | Plant data contract and active mock adapter. |
+| [src/data](src/data) | Sample plant records and fixture image references. |
+| [src/types](src/types) | Plant UI model and its category and pollen-level types. |
+| [src/theme](src/theme) | Bloom colours, Paper theme, and display typography. |
+| [src/constants](src/constants) | Shared spacing, radii, and control sizes. |
+| [assets](assets) | Brand artwork, bundled Lora fonts and license, sample photographs, and configured app icons and splash assets. |
 
-- Make sure `bloom-frontend/mobile` already runs in Expo Go (you previously confirmed this).
-- In VS Code, stop Expo (`Ctrl+C`) and save your work.
-- In the repo root, check `git status` and your branch. Commit any unfinished changes or back them up before copying files.
-- Create a separate development branch if appropriate: `git switch -c feature/bloom-mockup-ui` (only if this branch doesn't already exist).
-- This package assumes the Expo Router app directory is `mobile/src/app` as in your generated starter. **Do not run `create-expo-app` again.**
+## Reusable components
 
-## Dependencies
+| Component | Responsibilities and interface |
+| --- | --- |
+| `BloomBottomNavigation` | Renders equal-width tabs from Expo Router’s `BottomTabBarProps`. Uses route descriptors, navigation events, and supplied left, right, and bottom insets. |
+| `BloomButton` | Takes `label` and `onPress`. Supports primary and secondary variants, disabled state, optional width, and an accessible label. |
+| `BloomFilterChip` | Controlled chip with `label`, `selected`, and `onPress`. Accepts tinted or solid selected treatments, disabled state, an accessible label, and optional label font size. |
+| `BloomIndicator` | Displays `bloom`, `pollenLow`, or `pollenHigh` with an optional label override. Used by the status preview. |
+| `BloomLogo` | Displays the approved flower and lowercase wordmark. It takes no props and exposes one accessible name. |
+| `BloomPollenWarning` | Informational block with a `title` and `body`. The caller supplies the sample wording. |
+| `BloomScreen` | Scrollable screen wrapper with children. Accepts a custom `header` or `title` and `subtitle` with optional `eyebrow` and `displayHeading`. Also supports `botanical`, `insetTop`, and `contentContainerStyle`. |
+| `BloomSearchField` | Controlled `value` and `onChangeText` with a required accessible label. Supports an optional placeholder, clear and submit callbacks, and disabled state. |
+| `MapPreview` | Illustrative map for a `featured` plant with an `onOpenPlant` callback. |
+| `PlantTile` | Renders a `plant` with optional width and `onPress`. It can display as a static or interactive card. |
 
-From the VS Code PowerShell terminal in `bloom-frontend/mobile`:
+## Data access and calendar
 
-```powershell
-npm.cmd install react-native-paper
-npx.cmd expo install react-native-safe-area-context expo-font expo-splash-screen expo-image-picker
-npm.cmd install @expo-google-fonts/noto-sans
-```
+[plantApi.ts](src/api/plantApi.ts) exposes asynchronous `listPlants()` and `getPlantById(id)`. The active adapter reads local fixtures. The [Plant model](src/types/plant.ts) supplies UI properties such as the image source, display-ready flowering window, and sample distance and pollen level.
 
-Expo's default template already includes `expo-router`, `@expo/vector-icons` and `expo-status-bar`. If one is missing, check `mobile/package.json` and Expo's docs before installing a compatible version.
+[usePlantList.ts](src/hooks/usePlantList.ts) serves Discovery, Seasons, and Alerts. It starts in `loading`, then returns `success` with plants, `empty` for a successful empty collection, or `error` for a rejected request. Retry is accepted from `error` and restarts loading. Cleanup prevents obsolete results from updating the screen. Filtering and feedback presentation belong to each screen. Alerts can still show sample notices when plant references are unavailable.
 
-## Copy source files
+[Plant Details](src/app/%28tabs%29/%28map%29/plants/%5Bid%5D.tsx) requests one plant by route ID. It distinguishes loading, success, missing (`null`), and request failure with retry. An ID change remounts the request-owning component, and cleanup discards obsolete results.
 
-1. Extract this ZIP to a temporary folder. You will see `src`, `assets` and this guide.
-2. Inside your current `bloom-frontend/mobile`, preserve the generated `package.json`, `package-lock.json`, `app.json`, and `tsconfig.json`.
-3. Copy/merge the ZIP's `src` folder into **`bloom-frontend/mobile/src`**. Accept replacement of `src/app/_layout.tsx` and `src/app/(tabs)/*` if those files exist, **only after checking they contain no teammate's work**.
-4. Copy/merge the ZIP's `assets` folder into **`bloom-frontend/mobile/assets`**.
-5. The original default Expo template currently has `mobile/src/app/index.tsx` and `mobile/src/app/explore.tsx`. Once you have backed them up in Git, delete just those two **starter routes** if they still contain Expo sample content. This avoids route collisions with the new Discovery home (`src/app/(tabs)/(map)/index.tsx`). Leave the other template `src/components/*` files alone for now.
+[calendar.ts](src/utils/calendar.ts) defines January through December once and derives numbers, abbreviations, and initials. The Plant contract uses 1 for January and 12 for December. Seasons owns overlap filtering for summer (December–February), autumn (March–May), winter (June–August), and spring (September–November). Plant Details checks its own timeline membership. Submission owns same-month and cross-year formatting, and preserves unknown or incomplete selections.
 
-Keep the rest of your Expo starter; don't delete `node_modules`, lockfiles or config files. Don't copy any nested `.git` folder.
+## Layout and design
 
-## Run
+- `BloomScreen` provides standard scrolling and gutters. Its optional botanical treatment adds the approved gradient and decorative artwork behind content.
+- The wrapper applies the top safe-area edge by default. Account and Community Review pass `insetTop={false}` because their opaque stack headers account for the top inset. They retain 16 units of content padding. The correction passed TypeScript and a web export. Android visual confirmation remains pending.
+- Discovery adapts its plant grid at 360 logical units. Seasons has independent scrolling month and season selectors. Bottom navigation items share the available width. Keep wrapping and font scaling in mind when changing these layouts.
+- Use the Bloom Paper theme, Lora display styles, and Noto Sans interface styles. Reuse `Spacing`, `Radii`, and `ControlSize` from [constants/theme.ts](src/constants/theme.ts). The shared sizing constants provide a 48-unit minimum touch target and a preferred 56-unit button height.
 
-```powershell
-npx.cmd expo install --check
-npx.cmd expo start --clear
-# Once Expo has generated route types, open a second terminal in mobile:
-npx.cmd tsc --noEmit
-```
+## Development previews and integration boundaries
 
-Open Expo Go on your phone and scan the QR code. If you see a module error, verify the packages above were installed inside `mobile`, not in the repository root.
+The [mobile README](README.md#local-data-and-previews) lists `dev-bloom-button`, `dev-bloom-inputs`, `dev-bloom-plant-card`, and `dev-bloom-status`. They are guarded by `__DEV__` and contain a production redirect to Discovery. Runtime verification of that redirect is still pending.
 
-## Walkthrough to test with your partner
+The current frontend uses local plant discovery, fixture photos, an illustrative map, and example pollen notices. Sighting previews do not upload or persist submissions. Account validates demonstration input locally, Profile is a guest view, and Community Review decisions remain in local state. No backend connection has been verified. Map backend responses into the existing UI model at the adapter boundary once the team has agreed on the API contract.
 
-1. **Map:** Discover sample plants, search `lilac`, toggle category chips and the pollen filter. Tap Cherry Blossom in either map illustration or card.
-2. **Plant Details:** See photo, flower months, pollen label, sample location and community notes. Go back to the Map tab. Check that bottom tabs remain visible.
-3. **Seasons:** Change the month chips. View plants in the selected window and open a detail screen.
-4. **Submit:** Choose one photo from the phone library, type a name and location, and tap **Preview sighting**. Confirm the dialog says no data was uploaded.
-5. **Alerts:** Switch between All/Blooms/Pollen sample notices.
-6. **Profile:** Open Account (UI-only) and Community Review. Try the review buttons; notice changes are only local.
-7. **Accessibility:** Set phone font size larger, test screen scrolling and larger tap targets. Read titles and warnings without zooming.
+## Contributing
 
-## What's intentionally not implemented
-
-- No backend connection, database, accounts, stored sighting, community approval, push notifications or real pollen data.
-- The map is an illustrated placeholder; map pins and distances are fictional. No GPS or live map SDK.
-- Flower pictures are low-resolution crops retained from the previous Bloom reference; replace them with approved photos/assets before production.
-- For account preview **do not enter a real password**. This demo cannot log in.
-
-The `src/api/plantApi.ts` interface isolates mock data; the backend team can later provide API endpoints and data schemas while screens continue to use the same interface.
-
-## Git after testing
-
-From `bloom-frontend` repository root:
-
-```powershell
-git status
-git add mobile
-git commit -m "feat: build Bloom mockup UI demo with sample data"
-git push -u origin feature/bloom-mockup-ui
-```
-
-Replace the push branch name with `git branch --show-current` if you chose another branch. Do not push `node_modules`, secrets or Expo cache. Keep the UI branch separate from your teammate's branch and open a pull request when ready for review.
+Follow the [repository instructions](../AGENTS.md) and [mobile instructions](AGENTS.md). Preserve shared component APIs and keep screen-specific logic local. Share logic when it serves multiple consumers with the same behavior. Keep changes small and independently verifiable, and exclude generated output and secrets from Git.

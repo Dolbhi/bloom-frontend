@@ -15,13 +15,14 @@ Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 ```bash
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
 npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
+npm run lint                # lint when ESLint is installed and configured
+npm run typecheck            # no-emit TypeScript check
+npm run typecheck:strict     # also check unused locals and parameters
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+Run both typecheck scripts before declaring work done. Run lint when ESLint is installed and configured. Use `npm.cmd` in PowerShell if needed.
 
 ## Navigation & Routing
 

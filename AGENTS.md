@@ -6,7 +6,7 @@ Bloom is a mobile plant discovery and community application. Preserve approved m
 ## Workspace and safety
 - Frontend repository: `bloom-frontend`; Expo application: `mobile/`.
 - Inspect Git status and applicable existing instructions before editing. Preserve unrelated changes, including the previously reported untracked `Microsoft/` directory. Never stage it automatically.
-- Penpot development file: `Bloom Mobile UI Kit - test`. Verify the live file and target page before every batch of writes; stop on mismatch. Do not edit the original design file or Approved Mockups without explicit approval.
+- Official Penpot working file: `Bloom Mobile UI / Codex` (previously `Bloom Mobile UI Kit - test`), ID `e7ca6b81-c0d3-8029-8008-fe21ee5ca799`. Verify the live file and target page before every batch of writes; stop on mismatch. Do not edit the original design file or Approved Mockups without explicit approval.
 - Reuse existing components and files. Ask before destructive changes, token deletion/consolidation, bulk redesigns, dependency changes, or changes outside the requested scope. Do not commit or push unless requested.
 - Never expose MCP credentials, secrets or private configuration in logs, code or Git.
 
@@ -86,7 +86,7 @@ Use Noto Sans. Preserve the existing approved typography styles; do not adopt Pl
 
 ## Validation and reporting
 - Before editing, state intended scope and files/pages. For routine approved batches, avoid repeated confirmation; stop if the scope expands materially.
-- After edits, verify actual state with targeted reads, run the project no-emit TypeScript check (from mobile, `npx.cmd --no-install tsc --noEmit` if available), and run existing configured tests/lint where available. Do not install tools to make a check pass without approval.
+- After edits, verify actual state with targeted reads. Run `npm run typecheck` and `npm run typecheck:strict` from `mobile/` (use `npm.cmd` in PowerShell if needed). Run existing configured tests and lint where available. Do not install tools to make a check pass without approval.
 - Preview on web and Android when relevant. Distinguish code inspection, compilation, user-reported runtime results and untested behavior. Verify disabled actions do not fire; verify production preview protection before release.
 - Report changed files/components, bindings, visual differences, checks passed/failed/not run, limitations and the next small action. Check Git status after local edits.
 - Conserve AI usage: use focused prompts and small batches, avoid full-file audits for every component, and do not retry unsupported operations repeatedly.
@@ -101,7 +101,9 @@ Use Noto Sans. Preserve the existing approved typography styles; do not adopt Pl
 - Distinguish delayed API visibility from genuine validation failure.
 - If connectivity is lost, report uncertain state before attempting further writes.
 
-## Development sequence
+## Design workflow reference
+
+The eight planned frontend screens are implemented. The sequence below applies to future design work when requested.
 1. Read-only token and typography migration plan; obtain approval before edits.
 2. Upgrade existing buttons, search/input fields, chips/indicators, cards and navigation in bounded batches.
 3. Assemble approved screens using linked instances; compare against mockups.
