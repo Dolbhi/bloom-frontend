@@ -26,6 +26,7 @@ export default function ReviewScreen() {
   return (
     <BloomScreen
       botanical
+      insetTop={false}
       contentContainerStyle={styles.content}
       header={
         <View style={styles.header}>

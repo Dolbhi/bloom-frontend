@@ -24,6 +24,8 @@ type CustomHeader = {
 
 type Props = (DefaultHeader | CustomHeader) & {
   botanical?: boolean;
+  /** Set to false when an opaque stack header already applies the top inset. */
+  insetTop?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   children: ReactNode;
 };
@@ -32,7 +34,17 @@ const botanicalArtwork = require('../../assets/brand/botanical-background.png');
 const gradient = `linear-gradient(180deg, ${colors.palePurple}, ${colors.petalWhite}, ${colors.paleGreen})`;
 
 /** Shared screen spacing, reading hierarchy and safe-area handling for demo tabs. */
-export function BloomScreen({ title, subtitle, eyebrow, header, displayHeading = false, botanical = false, contentContainerStyle, children }: Props) {
+export function BloomScreen({
+  title,
+  subtitle,
+  eyebrow,
+  header,
+  displayHeading = false,
+  botanical = false,
+  insetTop = true,
+  contentContainerStyle,
+  children,
+}: Props) {
   const content = title !== undefined ? (
     <>
       <Text style={styles.logo}>✿ bloom</Text>
@@ -54,7 +66,7 @@ export function BloomScreen({ title, subtitle, eyebrow, header, displayHeading =
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={insetTop ? ['top'] : []}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.container, botanical && styles.botanicalContainer, contentContainerStyle]}

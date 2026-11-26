@@ -122,6 +122,7 @@ export default function AccountScreen() {
     <KeyboardAvoidingView style={styles.screen} enabled={Platform.OS === 'ios'} behavior="padding">
       <BloomScreen
         botanical
+        insetTop={false}
         contentContainerStyle={styles.content}
         header={
           <View style={styles.header}>
