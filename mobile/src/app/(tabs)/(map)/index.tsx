@@ -1,9 +1,9 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Button, Checkbox, Dialog, Portal, Text } from 'react-native-paper';
 import { router } from 'expo-router';
-import { plantApi } from '../../../api/plantApi';
+import { BloomButton } from '../../../components/BloomButton';
 import { BloomFilterChip } from '../../../components/BloomFilterChip';
 import { BloomLogo } from '../../../components/BloomLogo';
 import { BloomPollenWarning } from '../../../components/BloomPollenWarning';
@@ -12,29 +12,26 @@ import { BloomSearchField } from '../../../components/BloomSearchField';
 import { PlantTile } from '../../../components/PlantTile';
 import { MapPreview } from '../../../components/MapPreview';
 import { Spacing } from '../../../constants/theme';
+import { usePlantList } from '../../../hooks/usePlantList';
 import { colors } from '../../../theme/colors';
 import { displayTypography } from '../../../theme/typography';
-import type { Plant, PlantCategory } from '../../../types/plant';
+import type { PlantCategory } from '../../../types/plant';
 
 type CategoryFilter = 'All' | PlantCategory;
 const categories: CategoryFilter[] = ['All', 'Trees', 'Flowers', 'Shrubs'];
 
 export default function DiscoveryScreen() {
-  const [plants, setPlants] = useState<Plant[]>([]);
+  const { status, plants, retry } = usePlantList();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('All');
   const [lowPollenOnly, setLowPollenOnly] = useState(false);
   const [filterDialogVisible, setFilterDialogVisible] = useState(false);
   const { width } = useWindowDimensions();
 
-  useEffect(() => {
-    plantApi.listPlants().then(setPlants);
-  }, []);
-
-  const filtered = useMemo(() => plants.filter((plant) => {
+  const filtered = useMemo(() => plants?.filter((plant) => {
     const matchingName = `${plant.name} ${plant.scientificName} ${plant.location}`.toLowerCase().includes(query.toLowerCase().trim());
     return matchingName && (category === 'All' || plant.category === category) && (!lowPollenOnly || plant.pollenLevel === 'Low');
-  }), [plants, query, category, lowPollenOnly]);
+  }) ?? [], [plants, query, category, lowPollenOnly]);
 
   const openPlant = (id: string) => router.push({ pathname: '/plants/[id]', params: { id } });
   const featured = filtered[0];
@@ -54,10 +51,12 @@ export default function DiscoveryScreen() {
               <Text style={styles.eyebrow}>MELBOURNE, VICTORIA</Text>
             </View>
             <Text style={styles.heading}>Good morning, explorer</Text>
-            <Text style={styles.subheading}>
-              <Text style={styles.count}>{plants.length} sample {plants.length === 1 ? 'plant' : 'plants'}</Text>
-              {' to discover around you'}
-            </Text>
+            {plants && (
+              <Text style={styles.subheading}>
+                <Text style={styles.count}>{plants.length} sample {plants.length === 1 ? 'plant' : 'plants'}</Text>
+                {' to discover around you'}
+              </Text>
+            )}
           </>
         }
       >
@@ -118,7 +117,16 @@ export default function DiscoveryScreen() {
           <Text style={styles.sectionTitle}>Blooming this week</Text>
           <Text style={styles.sectionSide}>Sample sightings</Text>
         </View>
-        {filtered.length ? (
+        {status === 'loading' ? (
+          <Text accessibilityLiveRegion="polite" style={styles.emptyState}>Loading sample plants…</Text>
+        ) : status === 'error' ? (
+          <View style={styles.grid}>
+            <Text accessibilityRole="alert" style={styles.emptyState}>Couldn’t load sample plants.</Text>
+            <BloomButton label="Retry" accessibilityLabel="Retry loading sample plants" onPress={retry} />
+          </View>
+        ) : status === 'empty' ? (
+          <Text style={styles.emptyState}>No sample plants are available.</Text>
+        ) : filtered.length ? (
           <View style={styles.grid}>
             {filtered.map((plant) => <PlantTile key={plant.id} plant={plant} width={tileWidth} onPress={() => openPlant(plant.id)} />)}
           </View>

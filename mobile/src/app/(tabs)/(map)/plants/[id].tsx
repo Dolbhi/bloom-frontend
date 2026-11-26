@@ -22,21 +22,55 @@ const pollenColors: Record<PollenLevel, { backgroundColor: string; color: string
 
 export default function PlantDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <PlantDetails key={id} id={id} />;
+}
+
+type PlantDetailsState =
+  | { status: 'loading' | 'missing' | 'error' }
+  | { status: 'success'; plant: Plant };
+
+function PlantDetails({ id }: { id: string }) {
   const { fontScale } = useWindowDimensions();
-  const [plant, setPlant] = useState<Plant | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<PlantDetailsState>({ status: 'loading' });
+  const { status } = state;
 
   useEffect(() => {
+    if (status !== 'loading') return;
     let active = true;
-    setLoading(true);
-    plantApi.getPlantById(id).then((result) => {
-      if (active) { setPlant(result); setLoading(false); }
-    });
-    return () => { active = false; };
-  }, [id]);
 
-  if (loading) return <SafeAreaView style={styles.center}><Text>Loading plant details…</Text></SafeAreaView>;
-  if (!plant) return <SafeAreaView style={styles.center}><Text>Plant not found.</Text><Button onPress={() => router.back()}>Back to map</Button></SafeAreaView>;
+    async function load() {
+      try {
+        const plant = await plantApi.getPlantById(id);
+        if (active) setState(plant ? { status: 'success', plant } : { status: 'missing' });
+      } catch {
+        if (active) setState({ status: 'error' });
+      }
+    }
+
+    void load();
+    return () => { active = false; };
+  }, [id, status]);
+
+  if (state.status !== 'success') {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text accessibilityLiveRegion="polite" style={{ color: colors.deepPlum }}>
+          {status === 'loading' ? 'Loading plant details…'
+            : status === 'missing' ? 'Plant not found.'
+            : 'Couldn’t load plant details.'}
+        </Text>
+        {status === 'error' && (
+          <BloomButton
+            label="Retry"
+            accessibilityLabel="Retry loading plant details"
+            onPress={() => setState((current) => current.status === 'error' ? { status: 'loading' } : current)}
+          />
+        )}
+        {status !== 'loading' && <Button onPress={() => router.back()}>Back to map</Button>}
+      </SafeAreaView>
+    );
+  }
+  const { plant } = state;
 
   return (
     <BloomScreen

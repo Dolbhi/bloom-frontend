@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router } from 'expo-router';
-import { plantApi } from '../../api/plantApi';
 import { BloomButton } from '../../components/BloomButton';
 import { BloomFilterChip } from '../../components/BloomFilterChip';
 import { BloomLogo } from '../../components/BloomLogo';
 import { BloomScreen } from '../../components/BloomScreen';
 import { Radii, Spacing } from '../../constants/theme';
+import { usePlantList } from '../../hooks/usePlantList';
 import { colors } from '../../theme/colors';
 import { displayTypography } from '../../theme/typography';
 import type { Plant, PollenLevel } from '../../types/plant';
@@ -67,9 +67,12 @@ function PlantReference({ plant }: { plant: Plant }) {
 
 export default function AlertsScreen() {
   const [filter, setFilter] = useState<Category>('All');
-  const [plants, setPlants] = useState<Plant[]>([]);
-  useEffect(() => { plantApi.listPlants().then(setPlants); }, []);
+  const { status, plants, retry } = usePlantList();
   const shown = demoAlerts.filter((alert) => filter === 'All' || alert.kind === filter);
+  const showsPlantReferences = shown.some((alert) => alert.plantIds.length > 0);
+  const hasMissingReferences = plants && shown.some((alert) =>
+    alert.plantIds.some((id) => !plants.some((plant) => plant.id === id)),
+  );
 
   return (
     <BloomScreen
@@ -109,6 +112,21 @@ export default function AlertsScreen() {
               />
             ))}
           </View>
+          {showsPlantReferences && status === 'loading' && (
+            <Text accessibilityLiveRegion="polite" style={styles.body}>Loading plant references…</Text>
+          )}
+          {showsPlantReferences && status === 'error' && (
+            <>
+              <Text accessibilityRole="alert" style={styles.body}>Couldn’t load plant references.</Text>
+              <BloomButton label="Retry" accessibilityLabel="Retry loading plant references" onPress={retry} />
+            </>
+          )}
+          {showsPlantReferences && status === 'empty' && (
+            <Text style={styles.body}>No sample plants are available for these alerts.</Text>
+          )}
+          {hasMissingReferences && (
+            <Text style={styles.body}>Some plant references are unavailable.</Text>
+          )}
           {shown.map((alert) => (
             <View key={alert.id} style={[styles.card, alert.id === 'c' && styles.seasonCard]}>
               <View style={styles.alertHeading}>
@@ -129,7 +147,7 @@ export default function AlertsScreen() {
               </Text>
               <Text style={[styles.body, alert.id === 'c' && styles.inverse]}>{alert.detail}</Text>
               {alert.plantIds.map((id) => {
-                const plant = plants.find((candidate) => candidate.id === id);
+                const plant = plants?.find((candidate) => candidate.id === id);
                 return plant && <PlantReference key={id} plant={plant} />;
               })}
             </View>

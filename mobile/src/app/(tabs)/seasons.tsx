@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState, type ComponentRef, type React
 import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { router } from 'expo-router';
-import { plantApi } from '../../api/plantApi';
 import { BloomButton } from '../../components/BloomButton';
 import { BloomFilterChip } from '../../components/BloomFilterChip';
 import { BloomLogo } from '../../components/BloomLogo';
@@ -11,7 +10,7 @@ import { BloomScreen } from '../../components/BloomScreen';
 import { ControlSize, Radii, Spacing } from '../../constants/theme';
 import { colors } from '../../theme/colors';
 import { displayTypography } from '../../theme/typography';
-import type { Plant } from '../../types/plant';
+import { usePlantList } from '../../hooks/usePlantList';
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -131,11 +130,7 @@ function SelectorRow({ label, selectedKey, children }: {
 
 export default function SeasonsScreen() {
   const [selection, setSelection] = useState<CalendarSelection>({ month: 11 });
-  const [plants, setPlants] = useState<Plant[] | null>(null);
-
-  useEffect(() => {
-    plantApi.listPlants().then(setPlants);
-  }, []);
+  const { status, plants, retry } = usePlantList();
 
   const selectedMonth = 'month' in selection ? selection.month : undefined;
   const selectedSeason = 'season' in selection ? selection.season : undefined;
@@ -192,10 +187,18 @@ export default function SeasonsScreen() {
         <View style={styles.card}>
           <View style={styles.outlook}>
             <Text style={styles.outlookLabel}>{period} outlook</Text>
-            <Text accessibilityRole="header" style={displayTypography.sectionHeading}>
-              {results ? `${count} matching sample ${count === 1 ? 'plant' : 'plants'}` : 'Loading sample plants…'}
+            <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={displayTypography.sectionHeading}>
+              {status === 'loading' ? 'Loading sample plants…'
+                : status === 'error' ? 'Couldn’t load sample plants.'
+                : status === 'empty' ? 'No sample plants are available.'
+                : `${count} matching sample ${count === 1 ? 'plant' : 'plants'}`}
             </Text>
           </View>
+          {status === 'error' && (
+            <View style={styles.empty}>
+              <BloomButton label="Retry" accessibilityLabel="Retry loading sample plants" onPress={retry} />
+            </View>
+          )}
           {results && (count === 0 ? (
             <Text style={styles.empty}>No sample flowering windows overlap this selection.</Text>
           ) : results.map((plant) => (
@@ -218,10 +221,10 @@ export default function SeasonsScreen() {
           )))}
         </View>
 
-        <View style={styles.section}>
+        {plants && <View style={styles.section}>
           <Text accessibilityRole="header" style={displayTypography.sectionHeading}>Flowering windows</Text>
           <View style={[styles.card, styles.timelineCard]}>
-            {plants?.map((plant) => (
+            {plants.map((plant) => (
               <View key={plant.id} style={styles.section}>
                 <View style={styles.timelineTitle}>
                   <Text style={styles.plantName}>{plant.name}</Text>
@@ -249,7 +252,7 @@ export default function SeasonsScreen() {
               Example windows run January to December. Taller bars show flowering months, and outlines mark the selected period. Weather and location can affect flowering.
             </Text>
           </View>
-        </View>
+        </View>}
 
         <View style={styles.section}>
           <Text accessibilityRole="header" style={displayTypography.sectionHeading}>Coming up next</Text>
