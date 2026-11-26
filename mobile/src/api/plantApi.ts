@@ -22,7 +22,7 @@ type PlantDetailRecord = PlantRecord & {
   } | null;
 };
 
-const API_URL = "http://10.0.2.2:8000"
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const plantsUrl = `${API_URL.replace(/\/+$/, "")}/plants`;
 
 async function getJson<T>(url: string): Promise<T> {
