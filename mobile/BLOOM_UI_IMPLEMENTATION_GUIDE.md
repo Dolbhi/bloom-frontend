@@ -31,7 +31,6 @@ Expo's default template already includes `expo-router`, `@expo/vector-icons` and
 3. Copy/merge the ZIP's `src` folder into **`bloom-frontend/mobile/src`**. Accept replacement of `src/app/_layout.tsx` and `src/app/(tabs)/*` if those files exist, **only after checking they contain no teammate's work**.
 4. Copy/merge the ZIP's `assets` folder into **`bloom-frontend/mobile/assets`**.
 5. The original default Expo template currently has `mobile/src/app/index.tsx` and `mobile/src/app/explore.tsx`. Once you have backed them up in Git, delete just those two **starter routes** if they still contain Expo sample content. This avoids route collisions with the new Discovery home (`src/app/(tabs)/(map)/index.tsx`). Leave the other template `src/components/*` files alone for now.
-6. Optional: delete the ZIP's unused `src/components/ComingSoonScreen.tsx` (you don't need it for this walkthrough).
 
 Keep the rest of your Expo starter; don't delete `node_modules`, lockfiles or config files. Don't copy any nested `.git` folder.
 
