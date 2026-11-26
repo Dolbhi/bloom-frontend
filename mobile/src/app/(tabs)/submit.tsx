@@ -10,19 +10,15 @@ import { BloomScreen } from '../../components/BloomScreen';
 import { ControlSize, Radii, Spacing } from '../../constants/theme';
 import { colors } from '../../theme/colors';
 import { displayTypography } from '../../theme/typography';
+import { monthNames, type MonthName as Month } from '../../utils/calendar';
 
-const months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-] as const;
-type Month = (typeof months)[number];
 type WindowEnd = 'start' | 'end';
 const cameraAvailable = Platform.OS === 'android' || Platform.OS === 'ios';
 
 function describeWindow(start: Month | null, end: Month | null) {
   if (!start || !end) return start || end ? 'Flowering window incomplete' : 'Flowering window unknown';
   if (start === end) return start;
-  return `${start} – ${end}${months.indexOf(end) < months.indexOf(start) ? ' (ends next year)' : ''}`;
+  return `${start} – ${end}${monthNames.indexOf(end) < monthNames.indexOf(start) ? ' (ends next year)' : ''}`;
 }
 
 function MonthSelector({ label, value, expanded, invalid, onToggle, onSelect }: {
@@ -51,7 +47,7 @@ function MonthSelector({ label, value, expanded, invalid, onToggle, onSelect }: 
       </Pressable>
       {expanded && (
         <View style={styles.monthChoices}>
-          {[null, ...months].map((month) => (
+          {[null, ...monthNames].map((month) => (
             <BloomFilterChip
               key={month ?? 'unknown'}
               label={month ?? 'Not sure'}

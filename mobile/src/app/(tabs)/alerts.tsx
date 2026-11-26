@@ -16,21 +16,31 @@ import type { Plant, PollenLevel } from '../../types/plant';
 const categories = ['All', 'Blooms', 'Pollen'] as const;
 type Category = (typeof categories)[number];
 
-const demoAlerts = [
+const demoAlerts: {
+  id: string;
+  kind: Exclude<Category, 'All'>;
+  title: string;
+  detail: string;
+  plantIds: string[];
+  presentation: 'standard' | 'seasonNote';
+}[] = [
   {
     id: 'a', kind: 'Blooms', title: 'Cherry bloom activity nearby',
     detail: 'Sample update: Cherry Blossom flowering in Carlton Gardens.',
     plantIds: ['cherry-blossom'],
+    presentation: 'standard',
   },
   {
     id: 'b', kind: 'Pollen', title: 'A breezy day ahead',
     detail: 'Example pollen reminder only. Check a current trusted forecast.',
     plantIds: [],
+    presentation: 'standard',
   },
   {
     id: 'c', kind: 'Blooms', title: 'Watch the spring blooms',
     detail: 'Sample update: Lilac and Dogwood are in the seasonal gallery.',
     plantIds: ['common-lilac', 'pacific-dogwood'],
+    presentation: 'seasonNote',
   },
 ];
 
@@ -127,31 +137,34 @@ export default function AlertsScreen() {
           {hasMissingReferences && (
             <Text style={styles.body}>Some plant references are unavailable.</Text>
           )}
-          {shown.map((alert) => (
-            <View key={alert.id} style={[styles.card, alert.id === 'c' && styles.seasonCard]}>
-              <View style={styles.alertHeading}>
-                <MaterialCommunityIcons
-                  name={alert.kind === 'Pollen' ? 'weather-windy' : 'flower-outline'}
-                  size={22}
-                  color={alert.id === 'c' ? colors.white : colors.leafGreen}
-                  aria-hidden
-                />
-                <Text style={[styles.eyebrow, alert.id === 'c' && styles.inverse]}>
-                  {alert.id === 'c' ? 'SEASON NOTE' : `${alert.kind} · Sample notice`}
-                </Text>
-              </View>
-              <Text accessibilityRole="header" style={alert.id === 'c'
-                ? [displayTypography.sectionHeading, styles.inverse]
-                : styles.cardTitle}>
-                {alert.title}
-              </Text>
-              <Text style={[styles.body, alert.id === 'c' && styles.inverse]}>{alert.detail}</Text>
-              {alert.plantIds.map((id) => {
-                const plant = plants?.find((candidate) => candidate.id === id);
-                return plant && <PlantReference key={id} plant={plant} />;
-              })}
-            </View>
-          ))}
+          {shown.map((alert) => {
+            const isSeasonNote = alert.presentation === 'seasonNote';
+            return (
+                <View key={alert.id} style={[styles.card, isSeasonNote && styles.seasonCard]}>
+                  <View style={styles.alertHeading}>
+                    <MaterialCommunityIcons
+                      name={alert.kind === 'Pollen' ? 'weather-windy' : 'flower-outline'}
+                      size={22}
+                      color={isSeasonNote ? colors.white : colors.leafGreen}
+                      aria-hidden
+                    />
+                    <Text style={[styles.eyebrow, isSeasonNote && styles.inverse]}>
+                      {isSeasonNote ? 'SEASON NOTE' : `${alert.kind} · Sample notice`}
+                    </Text>
+                  </View>
+                  <Text accessibilityRole="header" style={isSeasonNote
+                    ? [displayTypography.sectionHeading, styles.inverse]
+                    : styles.cardTitle}>
+                    {alert.title}
+                  </Text>
+                  <Text style={[styles.body, isSeasonNote && styles.inverse]}>{alert.detail}</Text>
+                  {alert.plantIds.map((id) => {
+                    const plant = plants?.find((candidate) => candidate.id === id);
+                    return plant && <PlantReference key={id} plant={plant} />;
+                  })}
+                </View>
+            );
+          })}
         </View>
 
         <Text style={styles.notice}>These notices are examples. Automatic notifications and notification preferences are unavailable in this version.</Text>

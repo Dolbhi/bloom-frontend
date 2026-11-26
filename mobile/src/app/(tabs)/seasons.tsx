@@ -11,11 +11,7 @@ import { ControlSize, Radii, Spacing } from '../../constants/theme';
 import { colors } from '../../theme/colors';
 import { displayTypography } from '../../theme/typography';
 import { usePlantList } from '../../hooks/usePlantList';
-
-const months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+import { calendarMonths, monthNames } from '../../utils/calendar';
 
 const seasons = [
   { name: 'Summer', months: [12, 1, 2] },
@@ -137,7 +133,7 @@ export default function SeasonsScreen() {
   const selectedMonths: readonly number[] = 'month' in selection
     ? [selection.month]
     : selection.season.months;
-  const period = 'month' in selection ? months[selection.month - 1] : selection.season.name;
+  const period = 'month' in selection ? monthNames[selection.month - 1] : selection.season.name;
   const results = plants?.filter((plant) =>
     plant.bloomMonths.some((month) => selectedMonths.includes(month)),
   );
@@ -171,14 +167,14 @@ export default function SeasonsScreen() {
               />
             ) }))}
           </SelectorRow>
-          <SelectorRow label="Explore by month" selectedKey={selectedMonth === undefined ? undefined : months[selectedMonth - 1]}>
-            {months.map((month, index) => ({ key: month, chip: (
+          <SelectorRow label="Explore by month" selectedKey={selectedMonth === undefined ? undefined : period}>
+            {calendarMonths.map(({ name, number, abbreviation }) => ({ key: name, chip: (
               <BloomFilterChip
-                label={(selectedMonth === index + 1 ? '✓ ' : '') + month.slice(0, 3)}
-                accessibilityLabel={month}
-                selected={selectedMonth === index + 1}
+                label={(selectedMonth === number ? '✓ ' : '') + abbreviation}
+                accessibilityLabel={name}
+                selected={selectedMonth === number}
                 selectedTreatment="solid"
-                onPress={() => setSelection({ month: index + 1 })}
+                onPress={() => setSelection({ month: number })}
               />
             ) }))}
           </SelectorRow>
@@ -231,14 +227,14 @@ export default function SeasonsScreen() {
                   <Text style={styles.meta}>{plant.bloomWindow}</Text>
                 </View>
                 <View style={styles.timeline} aria-hidden>
-                  {months.map((month, index) => (
-                    <View key={month} style={[
+                  {calendarMonths.map(({ name, number }) => (
+                    <View key={name} style={[
                       styles.monthMarker,
-                      selectedMonths.includes(index + 1) && styles.selectedMarker,
+                      selectedMonths.includes(number) && styles.selectedMarker,
                     ]}>
                       <View style={[
                         styles.monthBar,
-                        plant.bloomMonths.includes(index + 1) && styles.floweringBar,
+                        plant.bloomMonths.includes(number) && styles.floweringBar,
                       ]} />
                     </View>
                   ))}
@@ -246,7 +242,7 @@ export default function SeasonsScreen() {
               </View>
             ))}
             <View style={styles.timeline} aria-hidden>
-              {months.map((month) => <Text key={month} style={styles.monthInitial}>{month[0]}</Text>)}
+              {calendarMonths.map(({ name, initial }) => <Text key={name} style={styles.monthInitial}>{initial}</Text>)}
             </View>
             <Text style={styles.body}>
               Example windows run January to December. Taller bars show flowering months, and outlines mark the selected period. Weather and location can affect flowering.

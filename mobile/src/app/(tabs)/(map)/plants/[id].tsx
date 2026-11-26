@@ -11,8 +11,7 @@ import { ControlSize, Radii, Spacing } from '../../../../constants/theme';
 import { colors } from '../../../../theme/colors';
 import { displayTypography } from '../../../../theme/typography';
 import type { Plant, PollenLevel } from '../../../../types/plant';
-
-const monthInitials = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+import { calendarMonths } from '../../../../utils/calendar';
 
 const pollenColors: Record<PollenLevel, { backgroundColor: string; color: string }> = {
   Low: { backgroundColor: colors.paleGreen, color: colors.leafGreen },
@@ -113,11 +112,11 @@ function PlantDetails({ id }: { id: string }) {
             <Text style={styles.dateText}>{plant.bloomWindow}</Text>
           </View>
           <View style={styles.months} aria-hidden>
-            {monthInitials.map((month, index) => {
-              const isBloomMonth = plant.bloomMonths.includes(index + 1);
+            {calendarMonths.map(({ name, number, initial }) => {
+              const isBloomMonth = plant.bloomMonths.includes(number);
               return (
-                <View key={index} style={[styles.monthCell, { minWidth: 10 * fontScale }]}>
-                  <Text style={styles.monthLabel}>{month}</Text>
+                <View key={name} style={[styles.monthCell, { minWidth: 10 * fontScale }]}>
+                  <Text style={styles.monthLabel}>{initial}</Text>
                   <View style={[styles.monthBar, isBloomMonth && styles.monthBarActive]} />
                 </View>
               );
