@@ -7,7 +7,12 @@ import { bloomTheme } from '../theme/theme';
 import { colors } from '../theme/colors';
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({ NotoSans_400Regular, NotoSans_700Bold });
+  const [fontsLoaded, fontError] = useFonts({
+    NotoSans_400Regular,
+    NotoSans_700Bold,
+    Lora_500Medium: require('../../assets/fonts/Lora-Medium.ttf'),
+    Lora_600SemiBold: require('../../assets/fonts/Lora-SemiBold.ttf'),
+  });
   if (!fontsLoaded && !fontError) return null;
 
   return (

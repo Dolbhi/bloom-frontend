@@ -1,16 +1,19 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Button, Checkbox, Dialog, Portal, Text } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { plantApi } from '../../../api/plantApi';
 import { BloomFilterChip } from '../../../components/BloomFilterChip';
+import { BloomLogo } from '../../../components/BloomLogo';
 import { BloomPollenWarning } from '../../../components/BloomPollenWarning';
+import { BloomScreen } from '../../../components/BloomScreen';
 import { BloomSearchField } from '../../../components/BloomSearchField';
 import { PlantTile } from '../../../components/PlantTile';
 import { MapPreview } from '../../../components/MapPreview';
 import { Spacing } from '../../../constants/theme';
 import { colors } from '../../../theme/colors';
+import { displayTypography } from '../../../theme/typography';
 import type { Plant, PlantCategory } from '../../../types/plant';
 
 type CategoryFilter = 'All' | PlantCategory;
@@ -39,24 +42,43 @@ export default function DiscoveryScreen() {
   const tileWidth = twoColumns ? (width - 44) / 2 : width - 32;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.logo}>✿ bloom</Text>
-        <Text style={styles.eyebrow}>✧ MELBOURNE, VICTORIA</Text>
-        <Text style={styles.heading}>Good morning, explorer</Text>
-        <Text style={styles.subheading}>{plants.length} sample plants to discover around you</Text>
-
+    <>
+      <BloomScreen
+        botanical
+        contentContainerStyle={styles.content}
+        header={
+          <>
+            <View style={styles.logo}><BloomLogo /></View>
+            <View style={styles.location}>
+              <MaterialCommunityIcons name="crosshairs" size={14} color={colors.leafGreen} aria-hidden />
+              <Text style={styles.eyebrow}>MELBOURNE, VICTORIA</Text>
+            </View>
+            <Text style={styles.heading}>Good morning, explorer</Text>
+            <Text style={styles.subheading}>
+              <Text style={styles.count}>{plants.length} sample {plants.length === 1 ? 'plant' : 'plants'}</Text>
+              {' to discover around you'}
+            </Text>
+          </>
+        }
+      >
         <Text style={styles.fieldLabel}>Search plants or places</Text>
         <View style={styles.searchRow}>
           <View style={styles.searchField}>
             <BloomSearchField
               value={query}
               onChangeText={setQuery}
-              placeholder="Plant, park or street"
+              placeholder="Search a plant, park or street"
               accessibilityLabel="Search plants or places"
             />
           </View>
-          <Button mode="contained" onPress={() => setFilterDialogVisible(true)} contentStyle={{ minHeight: 54 }} style={styles.filterButton}>Filters</Button>
+          <Button
+            mode="contained"
+            onPress={() => setFilterDialogVisible(true)}
+            contentStyle={styles.filterButtonContent}
+            style={styles.filterButton}
+          >
+            Filters
+          </Button>
         </View>
         <View style={styles.chipRow}>
           {categories.map((item) => (
@@ -68,15 +90,23 @@ export default function DiscoveryScreen() {
               onPress={() => setCategory(item)}
             />
           ))}
-          <BloomFilterChip
-            label="Low pollen"
-            selected={lowPollenOnly}
-            onPress={() => setLowPollenOnly(!lowPollenOnly)}
-          />
+          <View style={styles.pollenRow}>
+            <BloomFilterChip
+              label="Low pollen"
+              selected={lowPollenOnly}
+              onPress={() => setLowPollenOnly(!lowPollenOnly)}
+            />
+          </View>
         </View>
 
-        {featured && <MapPreview featured={featured} onOpenPlant={() => openPlant(featured.id)} />}
-        <Text style={styles.mapCaption}>Illustrative map and sample distances — not live GPS</Text>
+        {featured && (
+          <View style={styles.mapSection}>
+            <MapPreview featured={featured} onOpenPlant={() => openPlant(featured.id)} />
+            <Text style={styles.mapCaption}>
+              Showing {filtered.length} sample {filtered.length === 1 ? 'sighting' : 'sightings'} · Illustrative map and sample distances
+            </Text>
+          </View>
+        )}
         <View style={styles.warningPlacement}>
           <BloomPollenWarning
             title="Hay fever today · Example: Moderate"
@@ -93,7 +123,7 @@ export default function DiscoveryScreen() {
             {filtered.map((plant) => <PlantTile key={plant.id} plant={plant} width={tileWidth} onPress={() => openPlant(plant.id)} />)}
           </View>
         ) : <Text style={styles.emptyState}>No sample plants match these filters. Try All or clear the search.</Text>}
-      </ScrollView>
+      </BloomScreen>
 
       <Portal>
         <Dialog visible={filterDialogVisible} onDismiss={() => setFilterDialogVisible(false)}>
@@ -116,27 +146,31 @@ export default function DiscoveryScreen() {
           <Dialog.Actions><Button onPress={() => { setCategory('All'); setLowPollenOnly(false); }}>Clear</Button><Button mode="contained" onPress={() => setFilterDialogVisible(false)}>Done</Button></Dialog.Actions>
         </Dialog>
       </Portal>
-    </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.petalWhite },
-  content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 30 },
-  logo: { fontSize: 27, color: colors.purple, fontFamily: 'NotoSans_700Bold', marginBottom: 27 },
-  eyebrow: { fontSize: 12, color: colors.leafGreen, fontFamily: 'NotoSans_700Bold', letterSpacing: 1 },
-  heading: { marginTop: 10, fontSize: 27, lineHeight: 37, color: colors.deepPlum, fontFamily: 'NotoSans_700Bold' },
-  subheading: { color: colors.deepPlum, fontSize: 17, lineHeight: 26, marginTop: 3 },
-  fieldLabel: { marginTop: 24, marginBottom: 7, fontSize: 16, color: colors.leafGreen, fontFamily: 'NotoSans_700Bold' },
+  content: { paddingTop: Spacing.three, paddingBottom: Spacing.five },
+  logo: { marginBottom: Spacing.five },
+  location: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  eyebrow: { flexShrink: 1, fontSize: 12, color: colors.leafGreen, fontFamily: 'NotoSans_700Bold', letterSpacing: 1 },
+  heading: { ...displayTypography.screenHeading, marginTop: Spacing.three },
+  subheading: { color: colors.deepPlum, fontSize: 17, lineHeight: 26, marginTop: Spacing.two },
+  count: { fontFamily: 'NotoSans_700Bold' },
+  fieldLabel: { marginTop: Spacing.four, marginBottom: Spacing.two, fontSize: 16, color: colors.leafGreen, fontFamily: 'NotoSans_700Bold' },
   searchRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   searchField: { flex: 1, minWidth: 0 },
-  filterButton: { borderRadius: 16 },
+  filterButton: { borderRadius: 24, maxWidth: '45%' },
+  filterButtonContent: { minHeight: 48 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 13 },
-  mapCaption: { fontSize: 14, lineHeight: 21, marginTop: 8, color: colors.leafGreen },
-  warningPlacement: { marginTop: 20 },
-  sectionHeader: { marginTop: 32, marginBottom: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  sectionTitle: { fontSize: 21, lineHeight: 28, fontFamily: 'NotoSans_700Bold', color: colors.deepPlum, flexShrink: 1 },
-  sectionSide: { fontSize: 13, color: colors.leafGreen },
+  pollenRow: { width: '100%', alignItems: 'flex-start' },
+  mapSection: { marginTop: Spacing.four, gap: Spacing.twelve },
+  mapCaption: { fontSize: 14, lineHeight: 21, color: colors.deepPlum },
+  warningPlacement: { marginTop: Spacing.four },
+  sectionHeader: { marginTop: 32, marginBottom: 15, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  sectionTitle: { ...displayTypography.sectionHeading, flexShrink: 1, maxWidth: '100%' },
+  sectionSide: { fontSize: 13, color: colors.leafGreen, flexShrink: 1, maxWidth: '100%' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'flex-start' },
   emptyState: { padding: 22, fontSize: 17, color: colors.deepPlum },
   dialogLabel: { fontSize: 16, fontFamily: 'NotoSans_700Bold' },
