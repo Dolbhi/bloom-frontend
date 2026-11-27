@@ -22,9 +22,7 @@ type PlantDetailRecord = PlantRecord & {
   } | null;
 };
 
-// const API_URL = process.env.EXPO_PUBLIC_API_URL;
-// const API_URL = "http://10.0.2.2:8000/api/v1"; // Android emulator
-const API_URL = "http://172.17.160.1:8000/api/v1"; // Physical iOS
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const plantsUrl = `${API_URL.replace(/\/+$/, "")}/plants`;
 
 async function getJson<T>(url: string): Promise<T> {
