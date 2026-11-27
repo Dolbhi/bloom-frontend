@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Button, Checkbox, Dialog, Portal, Text } from 'react-native-paper';
 import { router } from 'expo-router';
@@ -21,15 +21,29 @@ const categories: CategoryFilter[] = ['All', 'Trees', 'Flowers', 'Shrubs'];
 
 export default function DiscoveryScreen() {
   const [plants, setPlants] = useState<Plant[]>([]);
+  const [isLoadingPlants, setIsLoadingPlants] = useState(true);
+  const [plantFetchError, setPlantFetchError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('All');
   const [lowPollenOnly, setLowPollenOnly] = useState(false);
   const [filterDialogVisible, setFilterDialogVisible] = useState(false);
   const { width } = useWindowDimensions();
 
-  useEffect(() => {
-    plantApi.listPlants().then(setPlants);
+  const fetchPlants = useCallback(async () => {
+    setIsLoadingPlants(true);
+    setPlantFetchError(null);
+    try {
+      setPlants(await plantApi.listPlants());
+    } catch (error) {
+      setPlantFetchError(error instanceof Error ? error.message : 'Unable to fetch plants.');
+    } finally {
+      setIsLoadingPlants(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void fetchPlants();
+  }, [fetchPlants]);
 
   const filtered = useMemo(() => plants.filter((plant) => {
     const matchingName = `${plant.name} ${plant.scientificName} ${plant.location}`.toLowerCase().includes(query.toLowerCase().trim());
@@ -61,6 +75,18 @@ export default function DiscoveryScreen() {
           </>
         }
       >
+        <View style={styles.fetchControls}>
+          <Button
+            mode="contained"
+            icon="refresh"
+            disabled={isLoadingPlants}
+            onPress={() => void fetchPlants()}
+            contentStyle={styles.fetchButtonContent}
+          >
+            {isLoadingPlants ? 'Fetching plants…' : 'Fetch plants'}
+          </Button>
+          {plantFetchError && <Text style={styles.fetchError}>Could not fetch plants: {plantFetchError}</Text>}
+        </View>
         <Text style={styles.fieldLabel}>Search plants or places</Text>
         <View style={styles.searchRow}>
           <View style={styles.searchField}>
@@ -158,6 +184,9 @@ const styles = StyleSheet.create({
   heading: { ...displayTypography.screenHeading, marginTop: Spacing.three },
   subheading: { color: colors.deepPlum, fontSize: 17, lineHeight: 26, marginTop: Spacing.two },
   count: { fontFamily: 'NotoSans_700Bold' },
+  fetchControls: { alignItems: 'flex-start', gap: Spacing.two, marginBottom: Spacing.two },
+  fetchButtonContent: { minHeight: 48 },
+  fetchError: { color: colors.pollenText, fontSize: 14 },
   fieldLabel: { marginTop: Spacing.four, marginBottom: Spacing.two, fontSize: 16, color: colors.leafGreen, fontFamily: 'NotoSans_700Bold' },
   searchRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   searchField: { flex: 1, minWidth: 0 },
