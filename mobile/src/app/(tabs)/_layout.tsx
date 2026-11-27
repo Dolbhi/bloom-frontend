@@ -8,9 +8,17 @@ import { colors } from '@/theme/colors';
 function tabIcon(
   name: ComponentProps<typeof MaterialCommunityIcons>['name'],
 ): NonNullable<BottomTabNavigationOptions['tabBarIcon']> {
-  return ({ color, size }) => (
-    <MaterialCommunityIcons name={name} color={typeof color === 'string' ? color : colors.purple} size={size} />
-  );
+  function TabIcon({ color, size }: Parameters<NonNullable<BottomTabNavigationOptions['tabBarIcon']>>[0]) {
+    return (
+      <MaterialCommunityIcons
+        name={name}
+        color={typeof color === 'string' ? color : colors.purple}
+        size={size}
+      />
+    );
+  }
+
+  return TabIcon;
 }
 
 export default function TabsLayout() {
