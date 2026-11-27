@@ -22,6 +22,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="account" options={{ headerShown: true, title: 'Account', headerTintColor: colors.purple, headerStyle: { backgroundColor: colors.petalWhite } }} />
+          <Stack.Screen name="account-settings" options={{ headerShown: true, title: 'Account settings', headerTintColor: colors.purple, headerStyle: { backgroundColor: colors.petalWhite } }} />
           <Stack.Screen name="review" options={{ headerShown: true, title: 'Community review', headerTintColor: colors.purple, headerStyle: { backgroundColor: colors.petalWhite } }} />
         </Stack>
       </PaperProvider>
